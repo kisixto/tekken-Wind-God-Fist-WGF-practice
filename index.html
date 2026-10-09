@@ -2,7 +2,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap">
 <style>
-/* Layout: training-mode HUD. Judgment panel on the left, Tekken-style input log on the right, controls below. Single dark look by choice. */
+/* Layout: training-mode HUD with two practice tabs (초풍신권 / 기원초). Judgment panel left, shared live input + log right. Single dark look by choice. */
 :root {
   color-scheme: dark;
   --bg: #0f0e15;
@@ -13,10 +13,11 @@
   --dim: #8e8aa3;
   --volt: #a291ff;      /* Kazuya's electric */
   --volt-hot: #efeaff;
+  --devil: #e0566b;     /* 기원권 */
   --amber: #f2b84b;
   --sky: #63b6ff;
   --bad: #ff6f72;
-  --good: #7be0a8;
+  --rec: #3a3648;
   --font-display: "Black Han Sans", "IBM Plex Sans KR", system-ui, sans-serif;
   --font-body: "IBM Plex Sans KR", system-ui, -apple-system, "Malgun Gothic", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
@@ -24,49 +25,97 @@
 * { box-sizing: border-box; }
 html, body { background: var(--bg); color: var(--fg); }
 body { font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
-.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 40px; display: grid; gap: 20px; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; padding-block: 24px 40px; display: grid; gap: 20px; }
+
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.tab { font: inherit; background: none; border: 0; border-bottom: 3px solid transparent; color: var(--dim); padding: 8px 14px 9px; cursor: pointer; font-weight: 700; font-size: 15px; display: inline-flex; gap: 8px; align-items: baseline; }
+.tab small { font-family: var(--font-mono); font-weight: 500; font-size: 11px; }
+.tab[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--volt); }
+.tab:hover { color: var(--fg); }
+.tab:focus-visible { outline: 2px solid var(--volt-hot); outline-offset: -2px; }
 
 header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
 .eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
 h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(30px, 5vw, 44px); line-height: 1.05; margin: 4px 0 0; text-wrap: balance; }
 h1 small { font-family: var(--font-body); font-size: 15px; font-weight: 500; color: var(--dim); margin-left: 8px; }
-.cmd { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.cmd .k { font-family: var(--font-mono); font-weight: 700; font-size: 18px; min-width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; padding: 0 8px; }
+.cmd { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.cmd .k { font-family: var(--font-mono); font-weight: 700; font-size: 17px; min-width: 34px; height: 36px; display: grid; place-items: center; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; padding: 0 7px; }
 .cmd .k.btn { border-color: var(--volt); color: var(--volt); }
-.cmd .plus { color: var(--dim); font-family: var(--font-mono); }
+.cmd .k.dv { border-color: var(--devil); color: var(--devil); }
+.cmd .sep { color: var(--dim); font-family: var(--font-mono); font-size: 13px; padding: 0 2px; }
 .cmd .alt { width: 100%; font-family: var(--font-mono); font-size: 12px; color: var(--dim); text-align: right; }
 
 .grid { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 20px; align-items: start; }
 @media (max-width: 820px) { .grid { grid-template-columns: minmax(0, 1fr); } }
-
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
 .judge { padding: 22px; display: grid; gap: 18px; position: relative; overflow: hidden; min-width: 0; }
-.judge .verdict { font-family: var(--font-display); font-size: clamp(40px, 8vw, 72px); line-height: 1; letter-spacing: .01em; }
-.judge .verdict.electric { color: var(--volt-hot); text-shadow: 0 0 18px var(--volt), 0 0 42px var(--volt); }
-.judge .verdict.wgf { color: var(--amber); }
-.judge .verdict.miss { color: var(--bad); }
-.judge .verdict.idle { color: var(--dim); }
-.judge .detail { color: var(--fg); max-width: 60ch; min-height: 3.1em; }
+.vrow { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.verdict { font-family: var(--font-display); font-size: clamp(40px, 8vw, 72px); line-height: 1; }
+.verdict.electric { color: var(--volt-hot); text-shadow: 0 0 18px var(--volt), 0 0 42px var(--volt); }
+.verdict.near { color: var(--amber); }
+.verdict.miss { color: var(--bad); }
+.verdict.idle { color: var(--dim); }
+.detail { max-width: 62ch; min-height: 3.1em; }
 .judge::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at 20% 30%, var(--volt) 0%, transparent 60%); opacity: 0; }
 .judge.flash::after { animation: zap .55s ease-out; }
 @keyframes zap { 0% { opacity: .55; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .judge.flash::after { animation: none; } }
-
-.tl-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .label { font-family: var(--font-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--dim); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+/* EWGF cell timeline */
 .timeline-scroll { overflow-x: auto; padding-bottom: 4px; }
-.timeline { display: flex; gap: 3px; min-height: 64px; align-items: flex-start; }
+.timeline { display: flex; gap: 3px; min-height: 64px; align-items: flex-start; padding-top: 8px; }
 .cell { width: 30px; flex: none; display: grid; gap: 3px; justify-items: center; }
 .cell .box { width: 30px; height: 38px; border-radius: 4px; display: grid; place-items: center; font-family: var(--font-mono); font-weight: 700; font-size: 16px; color: var(--bg); position: relative; }
 .cell .fn { font-family: var(--font-mono); font-size: 10px; color: var(--dim); font-variant-numeric: tabular-nums; }
 .d6 { background: var(--sky); } .d5 { background: #4b475c; color: var(--fg) !important; } .d2 { background: var(--amber); } .d3 { background: var(--volt); }
 .dx { background: var(--panel-2); color: var(--dim) !important; border: 1px solid var(--line); }
-.cell .box.p2::after { content: "2"; position: absolute; top: -7px; right: -6px; width: 17px; height: 17px; border-radius: 50%; background: var(--volt-hot); color: var(--bg); font-size: 10px; display: grid; place-items: center; box-shadow: 0 0 0 2px var(--panel); }
+.cell .box.p2::after { content: "RP"; position: absolute; top: -7px; right: -9px; min-width: 17px; height: 17px; padding: 0 3px; border-radius: 9px; font-size: 9px !important; background: var(--volt-hot); color: var(--bg); font-size: 10px; display: grid; place-items: center; box-shadow: 0 0 0 2px var(--panel); }
 .cell.trim .box { background: transparent; color: var(--dim) !important; border: 1px dashed var(--line); font-size: 11px; }
 .tl-empty { color: var(--dim); font-size: 14px; align-self: center; }
-.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--dim); }
-.legend span { display: inline-flex; align-items: center; gap: 6px; }
-.legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+/* 기원초 frame bar */
+.clock { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.clock .fnum { font-family: var(--font-mono); font-weight: 700; font-size: 34px; font-variant-numeric: tabular-nums; line-height: 1; min-width: 3.2ch; }
+.clock .zone { font-weight: 700; font-size: 15px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--dim); }
+.clock .zone.z-rec { color: var(--fg); background: var(--rec); border-color: var(--rec); }
+.clock .zone.z-win { color: var(--bg); background: var(--volt); border-color: var(--volt); }
+.clock .zone.z-late { color: var(--bg); background: var(--amber); border-color: var(--amber); }
+.clock .sub { color: var(--dim); font-size: 13px; }
+.fbar-wrap { display: grid; gap: 4px; }
+.fbar { display: grid; grid-template-columns: repeat(72, minmax(0, 1fr)); gap: 1px; }
+.fbar > div { height: 10px; }
+.zrow > div { height: 26px; border-radius: 1px; }
+.zrow .zs { background: color-mix(in srgb, var(--devil) 45%, var(--panel-2)); }
+.zrow .zh { background: var(--devil); }
+.zrow .zr { background: var(--rec); }
+.zrow .zw { background: var(--volt); }
+.zrow .zt { background: color-mix(in srgb, var(--volt) 28%, var(--panel-2)); }
+.zrow .hitmark { background: var(--volt-hot); box-shadow: 0 0 8px var(--volt); }
+.zrow .zl { background: color-mix(in srgb, var(--amber) 22%, var(--panel-2)); }
+.zrow .past { filter: brightness(1.35); }
+.zrow .now { outline: 2px solid var(--volt-hot); outline-offset: 0; position: relative; z-index: 1; }
+.irow > div { height: 18px; border-radius: 1px; background: transparent; position: relative; }
+.irow .d6, .irow .d5, .irow .d2, .irow .d3 { }
+.irow .d5 { background: transparent; }
+.irow .oth { background: #5c586e; }
+.irow .p2::after { content: ""; position: absolute; left: 50%; top: -7px; transform: translateX(-50%); width: 9px; height: 9px; border-radius: 50%; background: var(--volt-hot); box-shadow: 0 0 0 2px var(--panel); }
+.irow .p2.ab::after { background: var(--devil); }
+.zlabels { display: grid; grid-template-columns: repeat(72, minmax(0, 1fr)); font-family: var(--font-mono); font-size: 11px; color: var(--dim); }
+.zlabels span { white-space: nowrap; }
+.zlabels .w { color: var(--volt); font-weight: 700; }
+.trow { display: grid; grid-template-columns: repeat(72, minmax(0, 1fr)); font-family: var(--font-mono); font-weight: 700; font-size: 13px; color: var(--volt-hot); }
+.trow span { text-align: center; white-space: nowrap; }
+.trow .cap { grid-column: 30 / 47; text-align: right; padding-right: 6px; font-weight: 500; font-size: 11px; color: var(--volt); }
+.zones-key { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.zk { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; background: var(--panel-2); display: grid; gap: 2px; }
+.zk b { font-family: var(--font-mono); font-size: 13px; }
+.zk span { font-size: 12px; color: var(--dim); }
+.zk.w { border-color: var(--volt); }
+.zk.w b { color: var(--volt); }
 
 .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border-radius: 8px; overflow: hidden; border: 1px solid var(--line); }
 .stat { background: var(--panel-2); padding: 10px 14px; }
@@ -75,15 +124,6 @@ h1 small { font-family: var(--font-body); font-size: 15px; font-weight: 500; col
 @media (max-width: 480px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 .side { display: grid; gap: 20px; }
-.history { padding: 14px 14px 10px; }
-.history ol { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 2px; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-.history li { display: grid; grid-template-columns: 34px 1fr 40px; align-items: center; padding: 3px 6px; border-radius: 4px; font-size: 15px; }
-.history li:first-child { background: var(--panel-2); }
-.history .dir { font-weight: 700; font-size: 18px; text-align: center; }
-.history .bt { color: var(--volt); font-weight: 700; }
-.history .n { text-align: right; color: var(--dim); font-size: 13px; }
-.history .empty { color: var(--dim); font-family: var(--font-body); font-size: 13px; padding: 6px; }
-
 .live { padding: 14px; display: flex; gap: 18px; align-items: center; justify-content: space-between; }
 .pad { display: grid; grid-template-columns: repeat(3, 26px); gap: 4px; }
 .pad div, .btns div { height: 26px; border-radius: 4px; background: var(--panel-2); border: 1px solid var(--line); display: grid; place-items: center; font-family: var(--font-mono); font-size: 12px; color: var(--dim); }
@@ -91,80 +131,145 @@ h1 small { font-family: var(--font-body); font-size: 15px; font-weight: 500; col
 .btns { display: grid; grid-template-columns: repeat(2, 34px); gap: 6px; }
 .btns div { height: 34px; border-radius: 50%; font-weight: 700; }
 .btns div.on { background: var(--volt-hot); color: var(--bg); border-color: var(--volt-hot); }
-
-.recent { padding: 14px; }
-.recent ol { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
-.recent li { display: grid; grid-template-columns: 18px 1fr; gap: 8px; font-size: 13px; align-items: baseline; }
-.recent .mk { font-weight: 700; }
-.recent .ok { color: var(--volt); } .recent .meh { color: var(--amber); } .recent .no { color: var(--bad); }
-.recent .seq { display: block; font-family: var(--font-mono); font-size: 12px; color: var(--dim); }
+.history { padding: 14px 14px 10px; }
+.history ol { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 2px; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.history li { display: grid; grid-template-columns: 34px 1fr 40px; align-items: center; padding: 3px 6px; border-radius: 4px; font-size: 15px; }
+.history li:first-child { background: var(--panel-2); }
+.history .dir { font-weight: 700; font-size: 18px; text-align: center; }
+.history .bt { color: var(--volt); font-weight: 700; }
+.history .n { text-align: right; color: var(--dim); font-size: 13px; }
+.history .empty { color: var(--dim); font-family: var(--font-body); font-size: 13px; padding: 6px; display: block; }
 
 .bottom { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 20px; }
 @media (max-width: 820px) { .bottom { grid-template-columns: minmax(0, 1fr); } }
-.box-pad { padding: 18px; display: grid; gap: 12px; min-width: 0; }
+.box-pad { padding: 18px; display: grid; gap: 12px; min-width: 0; align-content: start; }
 h2 { font-size: 15px; margin: 0; font-weight: 700; }
 .keys { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 14px; align-items: center; }
 kbd { font-family: var(--font-mono); font-size: 12px; background: var(--panel-2); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 1px 6px; color: var(--fg); white-space: nowrap; }
-.tips { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 14px; color: var(--fg); }
+.tips { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 14px; }
 .tips li::marker { color: var(--volt); }
-.controls { display: flex; flex-wrap: wrap; gap: 8px; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
 button { font: inherit; font-size: 13px; color: var(--fg); background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 7px 12px; cursor: pointer; }
 .seg button { border: 0; border-radius: 0; }
-.seg button[aria-pressed="true"] { background: var(--volt); color: var(--bg); font-weight: 700; }
+button[aria-pressed="true"] { background: var(--volt); color: var(--bg); font-weight: 700; border-color: var(--volt); }
 button:hover { border-color: var(--volt); }
 button:focus-visible { outline: 2px solid var(--volt-hot); outline-offset: 2px; }
 button.danger[data-armed="true"] { background: var(--bad); color: var(--bg); border-color: var(--bad); }
 .note { font-size: 12px; color: var(--dim); }
-
-.focus-hint { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--volt); color: var(--bg); font-weight: 700; padding: 10px 16px; border-radius: 999px; font-size: 14px; box-shadow: 0 6px 24px rgba(0,0,0,.4); cursor: pointer; max-width: calc(100% - 32px); text-align: center; }
+.recent ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.recent li { display: grid; grid-template-columns: 18px 1fr; gap: 8px; font-size: 13px; align-items: baseline; }
+.recent .mk { font-weight: 700; }
+.recent .ok { color: var(--volt); } .recent .meh { color: var(--amber); } .recent .no { color: var(--bad); }
+.recent .seq { display: block; font-family: var(--font-mono); font-size: 12px; color: var(--dim); }
+.focus-hint { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--volt); color: var(--bg); font-weight: 700; padding: 10px 16px; border-radius: 999px; font-size: 14px; cursor: pointer; max-width: calc(100% - 32px); text-align: center; }
 </style>
 
 <div class="wrap">
-  <header>
+  <nav class="tabs" role="tablist" aria-label="연습 선택">
+    <button class="tab" role="tab" id="tab-ewgf" data-mode="ewgf" aria-selected="true">초풍신권 <small>→N↓↘+RP</small></button>
+    <button class="tab" role="tab" id="tab-kien" data-mode="kien" aria-selected="false">기원초 <small>↘+RP CH ▸ 초풍</small></button>
+  </nav>
+
+  <!-- ===== 초풍신권 header ===== -->
+  <header data-for="ewgf">
     <div>
       <div class="eyebrow">Kazuya Mishima · 연습 1</div>
       <h1>초풍신권 <small>초풍 · EWGF</small></h1>
     </div>
-    <div class="cmd" aria-label="커맨드: 앞, 중립, 아래, 아래 앞 대각 더하기 2">
-      <span class="k">→</span><span class="k">N</span><span class="k">↓</span><span class="k">↘</span><span class="plus">+</span><span class="k btn">2</span>
-      <span class="alt">넘패드 표기 6 · 5 · 2 · 3+2</span>
-      <span class="alt">철권 8 단축: → N ↘ + 2 (6 · 5 · 3+2)</span>
+    <div class="cmd" aria-label="앞, 중립, 아래, 아래앞 대각 더하기 2">
+      <span class="k">→</span><span class="k">N</span><span class="k">↓</span><span class="k">↘</span><span class="sep">+</span><span class="k btn">RP</span>
+      <span class="alt">넘버패드 표기 6 · N · 2 · 3+RP · 철권 8 단축 6 · N · 3+RP</span>
+    </div>
+  </header>
+  <!-- ===== 기원초 header ===== -->
+  <header data-for="kien" hidden>
+    <div>
+      <div class="eyebrow">Kazuya Mishima · 연습 2</div>
+      <h1>기원초 <small>기원권 카운터 → 초풍신권</small></h1>
+    </div>
+    <div class="cmd" aria-label="기원권 아래앞 대각 더하기 2 카운터 후 47에서 59프레임 사이에 초풍신권">
+      <span class="k dv">↘</span><span class="k dv">RP</span><span class="sep">CH ▸ 47F</span><span class="k">→</span><span class="sep">48F</span><span class="k">N</span><span class="sep">49F</span><span class="k">↘</span><span class="k btn">RP</span>
+      <span class="alt">무족초 6 · N · 3+RP 또는 중립 생략 6 · 2 · 3+RP · 한 프레임이라도 어긋나면 실패</span>
     </div>
   </header>
 
   <div class="grid">
-    <section class="panel judge" id="judge" aria-live="polite">
-      <div>
-        <div class="label">판정</div>
-        <div class="verdict idle" id="verdict">준비</div>
-      </div>
-      <div class="detail" id="detail">→ 를 짧게 누르고 놓은 뒤 ↓, 그리고 ↘ 가 되는 순간 2를 누르세요. ↘ 와 2가 같은 프레임에 들어가야 초풍신권입니다. 철권 8 단축 커맨드처럼 ↓ 를 건너뛰고 → N ↘+2 로 넣어도 됩니다.</div>
-      <div style="display:grid;gap:10px;min-width:0">
-        <div class="tl-head"><span class="label">마지막 시도 · 프레임 단위 (1F = 1/60초)</span><span class="label" id="tlSeq"></span></div>
-        <div class="timeline-scroll"><div class="timeline" id="timeline"><span class="tl-empty">아직 시도가 없습니다.</span></div></div>
-        <div class="legend">
-          <span><i class="d6"></i>→ 앞</span><span><i class="d5"></i>N 중립</span><span><i class="d2"></i>↓ 아래</span><span><i class="d3"></i>↘ 대각</span><span><i style="background:var(--volt-hot);border-radius:50%"></i>2 입력 프레임</span>
+    <div style="display:grid;gap:20px;min-width:0">
+      <!-- ===== 초풍신권 judge ===== -->
+      <section class="panel judge" data-for="ewgf" id="judge-ewgf" aria-live="polite">
+        <div>
+          <div class="label">판정</div>
+          <div class="verdict idle" id="e-verdict">준비</div>
         </div>
-      </div>
-      <div class="stats">
-        <div class="stat"><b id="sAtt">0</b><span>시도</span></div>
-        <div class="stat"><b id="sEw">0</b><span>초풍신권</span></div>
-        <div class="stat"><b id="sRate">–</b><span>성공률</span></div>
-        <div class="stat"><b id="sStreak">0</b><span>연속 <span id="sBest">(최고 0)</span></span></div>
-      </div>
-    </section>
+        <div class="detail" id="e-detail">→ 를 짧게 누르고 놓은 뒤 ↓, 그리고 ↘ 가 되는 순간 RP를 누르세요. ↘ 와 RP가 같은 프레임에 들어가야 초풍신권입니다. 철권 8 단축 커맨드처럼 ↓ 를 건너뛰고 → N ↘+RP 로 넣어도 됩니다.</div>
+        <div style="display:grid;gap:10px;min-width:0">
+          <div class="vrow"><span class="label">마지막 시도 · 프레임 단위 (1F = 1/60초)</span><span class="label" id="e-seq"></span></div>
+          <div class="timeline-scroll"><div class="timeline" id="e-timeline"><span class="tl-empty">아직 시도가 없습니다.</span></div></div>
+          <div class="legend">
+            <span><i class="d6"></i>→ 앞</span><span><i class="d5"></i>N 중립</span><span><i class="d2"></i>↓ 아래</span><span><i class="d3"></i>↘ 대각</span><span><i style="background:var(--volt-hot);border-radius:50%"></i>RP 입력 프레임</span>
+          </div>
+        </div>
+        <div class="stats">
+          <div class="stat"><b id="e-att">0</b><span>시도</span></div>
+          <div class="stat"><b id="e-ok">0</b><span>초풍신권</span></div>
+          <div class="stat"><b id="e-rate">–</b><span>성공률</span></div>
+          <div class="stat"><b id="e-streak">0</b><span>연속 <span id="e-best">(최고 0)</span></span></div>
+        </div>
+      </section>
+
+      <!-- ===== 기원초 judge ===== -->
+      <section class="panel judge" data-for="kien" id="judge-kien" aria-live="polite" hidden>
+        <div class="vrow">
+          <div>
+            <div class="label">판정</div>
+            <div class="verdict idle" id="k-verdict">준비</div>
+          </div>
+          <div class="clock" aria-live="off">
+            <span class="fnum" id="k-fnum">F –</span>
+            <span class="zone" id="k-zone">대기</span>
+          </div>
+        </div>
+        <div class="detail" id="k-detail">↘+RP 로 기원권을 내면 카운터 히트로 처리되고 프레임이 1F부터 셉니다. 46F까지는 경직입니다. 47F에 →, 48F에 N(또는 ↓), 49F에 ↘+RP. 커맨드 전체를 이 세 프레임에 한 프레임씩 정확히 넣어야 초풍이 59F에 맞습니다.</div>
+
+        <div class="fbar-wrap">
+          <div class="trow" aria-hidden="true"><span class="cap">넣을 입력</span><span style="grid-column:47">→</span><span style="grid-column:48">N</span><span style="grid-column:49 / 52;text-align:left">↘+RP</span></div>
+          <div class="zlabels" aria-hidden="true">
+            <span style="grid-column:1">1</span>
+            <span style="grid-column:14">14 CH</span>
+            <span style="grid-column:42 / 47;text-align:right;padding-right:2px">46</span>
+            <span class="w" style="grid-column:47 / 50">47–49</span>
+            <span class="w" style="grid-column:55 / 60;text-align:right">59</span>
+            <span style="grid-column:68 / 73;text-align:right">72</span>
+          </div>
+          <div class="fbar zrow" id="k-zrow"></div>
+          <div class="fbar irow" id="k-irow"></div>
+        </div>
+
+        <div class="zones-key">
+          <div class="zk"><b>1–46F 경직</b><span>기원권 발생(14F 카운터)과 경직. 입력해도 초풍이 나가지 않습니다.</span></div>
+          <div class="zk w"><b>47–49F 커맨드 구간</b><span>47F →, 48F N 또는 ↓, 49F ↘+RP. 세 프레임에 커맨드 전체를 넣습니다.</span></div>
+          <div class="zk"><b>50–59F 히트 구간</b><span>초풍이 날아가 59F에 맞습니다. 이때 입력이 남아 있으면 늦습니다.</span></div>
+          <div class="zk"><b>60F~ 늦음</b><span>상대가 떠서 공중 히트(기원삑초).</span></div>
+        </div>
+        <div class="legend">
+          <span><i style="background:var(--sky)"></i>→</span><span><i style="background:var(--amber)"></i>↓</span><span><i style="background:var(--volt)"></i>↘</span><span><i style="background:#5c586e"></i>다른 방향</span><span>빈칸 = 중립</span>
+          <span><i style="background:var(--volt-hot);border-radius:50%"></i>RP 입력</span><span><i style="background:var(--devil);border-radius:50%"></i>기원권</span><span><i style="background:var(--volt-hot);box-shadow:0 0 6px var(--volt)"></i>초풍 히트 프레임</span>
+        </div>
+        <div class="stats">
+          <div class="stat"><b id="k-att">0</b><span>시도</span></div>
+          <div class="stat"><b id="k-ok">0</b><span>기원초</span></div>
+          <div class="stat"><b id="k-rate">–</b><span>성공률</span></div>
+          <div class="stat"><b id="k-streak">0</b><span>연속 <span id="k-best">(최고 0)</span></span></div>
+        </div>
+      </section>
+    </div>
 
     <aside class="side">
       <div class="panel live">
-        <div>
-          <div class="label" style="margin-bottom:8px">방향</div>
-          <div class="pad" id="pad"></div>
-        </div>
-        <div>
-          <div class="label" style="margin-bottom:8px">버튼</div>
-          <div class="btns" id="btns"><div data-b="1">1</div><div data-b="2">2</div><div data-b="3">3</div><div data-b="4">4</div></div>
-        </div>
+        <div><div class="label" style="margin-bottom:8px">방향</div><div class="pad" id="pad"></div></div>
+        <div><div class="label" style="margin-bottom:8px">버튼</div>
+          <div class="btns" id="btns"><div data-b="1">LP</div><div data-b="2">RP</div><div data-b="3">LK</div><div data-b="4">RK</div></div></div>
       </div>
       <div class="panel history">
         <div class="label">입력 기록</div>
@@ -178,14 +283,20 @@ button.danger[data-armed="true"] { background: var(--bad); color: var(--bg); bor
       <h2>조작</h2>
       <div class="keys">
         <span><kbd>←</kbd> <kbd>↑</kbd> <kbd>↓</kbd> <kbd>→</kbd> 또는 <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>방향</span>
-        <span><kbd>U</kbd> <kbd>I</kbd> <kbd>J</kbd> <kbd>K</kbd></span><span>1 (LP) · 2 (RP) · 3 (LK) · 4 (RK)</span>
-        <span>패드</span><span>방향키·왼쪽 스틱, X=1 · Y=2 · A=3 · B=4 (Xbox 배치)</span>
+        <span><kbd>U</kbd> <kbd>I</kbd> <kbd>J</kbd> <kbd>K</kbd></span><span>U = LP · I = RP · J = LK · K = RK</span>
+        <span>패드</span><span>방향키·왼쪽 스틱, X=LP · Y=RP · A=LK · B=RK (Xbox 배치)</span>
       </div>
       <h2 style="margin-top:6px">입력 요령</h2>
-      <ol class="tips">
+      <ol class="tips" data-for="ewgf">
         <li>→ 는 톡 치고 바로 놓습니다. 놓는 순간이 중립(N)입니다.</li>
-        <li>키보드는 ↓ 를 누른 채로 → 와 <kbd>I</kbd> 를 동시에 누르면 ↘+2 가 됩니다.</li>
-        <li>단축 커맨드는 → 를 놓은 뒤(N) 바로 ↘+2 입니다. → 에서 놓지 않고 곧장 ↘ 로 가면 중립 누락으로 실패합니다.</li>
+        <li>키보드는 ↓ 를 누른 채로 → 와 <kbd>I</kbd> 를 동시에 누르면 ↘+RP 가 됩니다.</li>
+        <li>단축 커맨드는 → 를 놓은 뒤(N) 바로 ↘+RP 입니다. → 에서 놓지 않고 곧장 ↘ 로 가면 중립 누락으로 실패합니다.</li>
+      </ol>
+      <ol class="tips" data-for="kien" hidden>
+        <li>↘+RP 로 기원권. 위쪽 큰 숫자가 지금 몇 프레임째인지 보여 줍니다.</li>
+        <li>회색 "경직"이 밝은 보라 "커맨드 구간"으로 바뀌는 47F에 →, 48F에 N(또는 ↓), 49F에 ↘+RP. 한 프레임이라도 비거나 밀리면 안 됩니다.</li>
+        <li>무족초(→ N ↘+RP)와 중립 생략(→ ↓ ↘+RP) 모두 인정합니다. 정식 →N↓↘ 는 4프레임이라 들어가지 않습니다.</li>
+        <li>→ 가 46F 이전에 끝나면 커맨드가 경직 중에 시작돼 기원권이 다시 나갑니다.</li>
       </ol>
     </section>
     <section class="panel box-pad">
@@ -195,13 +306,20 @@ button.danger[data-armed="true"] { background: var(--bad); color: var(--bg); bor
           <button type="button" id="side1" aria-pressed="true">1P (오른쪽 보기)</button>
           <button type="button" id="side2" aria-pressed="false">2P (왼쪽 보기)</button>
         </div>
-        <button type="button" id="shortcut" aria-pressed="true">단축 커맨드 허용</button>
         <button type="button" id="sound" aria-pressed="true">효과음 켜짐</button>
-        <button type="button" id="reset" class="danger" data-armed="false">기록 초기화</button>
       </div>
-      <div class="note">단축 커맨드를 끄면 정식 커맨드(→N↓↘)만 성공으로 칩니다. 2P 쪽에서는 앞이 ← 입니다. 판정은 브라우저 시간 기준 60fps로 프레임을 나눠 계산하며, 실제 게임의 입력 지연과는 차이가 있을 수 있습니다.</div>
+      <div class="controls" data-for="ewgf">
+        <button type="button" id="shortcut" aria-pressed="true">단축 커맨드 허용</button>
+        <button type="button" id="e-reset" class="danger" data-armed="false">초풍 기록 초기화</button>
+      </div>
+      <div class="controls" data-for="kien" hidden>
+        <button type="button" id="auto" aria-pressed="false">자동 기원권 끔</button>
+        <button type="button" id="k-reset" class="danger" data-armed="false">기원초 기록 초기화</button>
+      </div>
+      <div class="note" data-for="ewgf">단축 커맨드를 끄면 정식 커맨드(→N↓↘)만 성공으로 칩니다. 2P 쪽에서는 앞이 ← 입니다. 판정은 브라우저 시간 기준 60fps로 계산하며, 실제 게임의 입력 지연과는 차이가 있을 수 있습니다.</div>
+      <div class="note" data-for="kien" hidden>자동 기원권을 켜면 1~2초마다 기원권이 저절로 나가서 경직 이후 입력만 연습할 수 있습니다. 판정은 기원권을 입력한 프레임을 1F로 셉니다. 경직 1–46F, 초풍 히트 47–59F, 커맨드는 47F →, 48F N 또는 ↓, 49F ↘+RP 로 정확히 맞아야 성공입니다. 경직 중부터 → 를 누르고 있어도 47F에 → 상태면 인정합니다.</div>
       <div class="label" style="margin-top:6px">최근 시도</div>
-      <ol id="recent" class="recent" style="padding:0;margin:0"><li style="display:block;color:var(--dim)">기록이 없습니다.</li></ol>
+      <div class="recent"><ol id="recent"></ol></div>
     </section>
   </div>
 </div>
@@ -211,73 +329,57 @@ button.danger[data-armed="true"] { background: var(--bad); color: var(--bg); bor
 <script>
 (() => {
   const FR = 1000 / 60;
+  const BTN = { 1:"LP", 2:"RP", 3:"LK", 4:"RK" };
   const GLYPH = {1:"↙",2:"↓",3:"↘",4:"←",5:"N",6:"→",7:"↖",8:"↑",9:"↗"};
-  const KEYMAP = {
-    ArrowLeft:"L", KeyA:"L", ArrowRight:"R", KeyD:"R", ArrowUp:"U", KeyW:"U", ArrowDown:"D", KeyS:"D",
-    KeyU:"1", KeyI:"2", KeyJ:"3", KeyK:"4"
-  };
+  const KEYMAP = { ArrowLeft:"L", KeyA:"L", ArrowRight:"R", KeyD:"R", ArrowUp:"U", KeyW:"U", ArrowDown:"D", KeyS:"D", KeyU:"1", KeyI:"2", KeyJ:"3", KeyK:"4" };
   const $ = id => document.getElementById(id);
 
-  // ---------- state ----------
+  // ---------- shared state ----------
   const held = { L:0, R:0, U:0, D:0 };
   const btnHeld = { 1:0, 2:0, 3:0, 4:0 };
-  let side = 1; // 1 = facing right, -1 = facing left
-  let soundOn = true;
-  let allowShort = true; // Tekken 8: f,n,df+2 also gives EWGF
+  let side = 1, soundOn = true, allowShort = true, autoOn = false, mode = "ewgf";
   const t0 = performance.now();
   let lastFrame = Math.floor((performance.now() - t0) / FR);
-  const evq = [];
-  const buf = []; // {f, dir, press:[...]}
+  const evq = [], buf = [], hist = [];
   const MAXBUF = 600;
-  const hist = [];
   let histDirty = true;
-  let consumed = -1;   // absolute frame up to which inputs belong to a judged attempt
-  let pending = null;  // 2 pressed on ↓, waiting to see when ↘ arrives
 
-  let stats = { att:0, ew:0, streak:0, best:0, recent:[] };
-  try { const s = JSON.parse(localStorage.getItem("ewgf-stats") || "null"); if (s) stats = Object.assign(stats, s); } catch (e) {}
-  try { const p = JSON.parse(localStorage.getItem("ewgf-prefs") || "null"); if (p) { side = p.side || 1; soundOn = p.sound !== false; allowShort = p.short !== false; } } catch (e) {}
-  const save = () => { try { localStorage.setItem("ewgf-stats", JSON.stringify(stats)); localStorage.setItem("ewgf-prefs", JSON.stringify({ side, sound: soundOn, short: allowShort })); } catch (e) {} };
+  const blank = () => ({ ok:0, att:0, streak:0, best:0, recent:[] });
+  const stats = { ewgf: blank(), kien: blank() };
+  try { const s = JSON.parse(localStorage.getItem("ewgf-stats") || "null"); if (s) { Object.assign(stats.ewgf, s); if (s.ew != null && s.ok == null) stats.ewgf.ok = s.ew; } } catch (e) {}
+  try { const s = JSON.parse(localStorage.getItem("kien2-stats") || "null"); if (s) Object.assign(stats.kien, s); } catch (e) {}
+  try { const p = JSON.parse(localStorage.getItem("ewgf-prefs") || "null"); if (p) { side = p.side || 1; soundOn = p.sound !== false; allowShort = p.short !== false; autoOn = !!p.auto; if (p.mode === "kien") mode = "kien"; } } catch (e) {}
+  if (location.hash === "#kien") mode = "kien"; else if (location.hash === "#ewgf") mode = "ewgf";
+  const save = () => { try {
+    localStorage.setItem("ewgf-stats", JSON.stringify(stats.ewgf));
+    localStorage.setItem("kien2-stats", JSON.stringify(stats.kien));
+    localStorage.setItem("ewgf-prefs", JSON.stringify({ side, sound: soundOn, short: allowShort, auto: autoOn, mode }));
+  } catch (e) {} };
 
-  // ---------- input capture ----------
+  // ---------- input ----------
   const stamp = e => { const n = performance.now(); const t = e && e.timeStamp; return (t && t <= n + 5 && t > n - 1000) ? t : n; };
   addEventListener("keydown", e => {
     const k = KEYMAP[e.code]; if (!k) return;
-    e.preventDefault();
-    if (e.repeat) return;
-    evq.push({ t: stamp(e), k, down: true });
-    audioInit();
+    e.preventDefault(); if (e.repeat) return;
+    evq.push({ t: stamp(e), k, down: true }); audioInit();
   });
-  addEventListener("keyup", e => {
-    const k = KEYMAP[e.code]; if (!k) return;
-    e.preventDefault();
-    evq.push({ t: stamp(e), k, down: false });
-  });
-  addEventListener("blur", () => {
-    const t = performance.now();
-    ["L","R","U","D","1","2","3","4"].forEach(k => evq.push({ t, k, down: false }));
-  });
-
+  addEventListener("keyup", e => { const k = KEYMAP[e.code]; if (!k) return; e.preventDefault(); evq.push({ t: stamp(e), k, down: false }); });
+  addEventListener("blur", () => { const t = performance.now(); ["L","R","U","D","1","2","3","4"].forEach(k => evq.push({ t, k, down: false })); });
   let padPrev = {};
   function pollPad() {
     let pads; try { pads = navigator.getGamepads ? navigator.getGamepads() : []; } catch (e) { return; }
     const gp = pads && Array.from(pads).find(Boolean); if (!gp) return;
-    const b = i => !!(gp.buttons[i] && gp.buttons[i].pressed);
-    const ax = gp.axes || [];
-    const now = { L: b(14) || ax[0] < -0.5, R: b(15) || ax[0] > 0.5, U: b(12) || ax[1] < -0.5, D: b(13) || ax[1] > 0.5,
-                  "1": b(2), "2": b(3), "3": b(0), "4": b(1) };
+    const b = i => !!(gp.buttons[i] && gp.buttons[i].pressed), ax = gp.axes || [];
+    const now = { L: b(14) || ax[0] < -0.5, R: b(15) || ax[0] > 0.5, U: b(12) || ax[1] < -0.5, D: b(13) || ax[1] > 0.5, "1": b(2), "2": b(3), "3": b(0), "4": b(1) };
     const t = performance.now();
     for (const k in now) if (!!now[k] !== !!padPrev[k]) { evq.push({ t, k, down: !!now[k] }); if (now[k]) audioInit(); }
     padPrev = now;
   }
+  const dirNow = () => { const h = ((held.R ? 1 : 0) - (held.L ? 1 : 0)) * side, v = (held.U ? 1 : 0) - (held.D ? 1 : 0); return (v + 1) * 3 + (h + 2); };
 
-  const dirNow = () => {
-    let h = (held.R ? 1 : 0) - (held.L ? 1 : 0); h *= side;
-    const v = (held.U ? 1 : 0) - (held.D ? 1 : 0);
-    return (v + 1) * 3 + (h + 2); // v=-1 → 1..3, v=0 → 4..6, v=1 → 7..9
-  };
+  const at = f => { if (!buf.length) return null; const i = f - buf[0].f; return (i >= 0 && i < buf.length) ? buf[i] : null; };
+  const runStartF = f => { const d = at(f).dir; while (at(f - 1) && at(f - 1).dir === d) f--; return f; };
 
-  // ---------- frame loop ----------
   function tick() {
     pollPad();
     const cur = Math.floor((performance.now() - t0) / FR);
@@ -291,183 +393,283 @@ button.danger[data-armed="true"] { background: var(--bad); color: var(--bg); bor
         else { if (e.down && !btnHeld[e.k]) press.push(e.k); btnHeld[e.k] = e.down ? 1 : 0; }
       }
       const rec = { f, dir: dirNow(), press };
-      buf.push(rec);
-      if (buf.length > MAXBUF) buf.shift();
-      onFrame(rec);
+      buf.push(rec); if (buf.length > MAXBUF) buf.shift();
+      logHistory(rec);
+      if (mode === "ewgf") E.onFrame(rec); else K.onFrame(rec);
     }
     lastFrame = cur;
     renderLive();
     if (histDirty) renderHistory();
+    if (mode === "kien") K.renderLive();
     $("focusHint").hidden = document.hasFocus();
     requestAnimationFrame(tick);
   }
 
-  // ---------- input history ----------
-  function onFrame(rec) {
+  function logHistory(rec) {
     const top = hist[0];
     if (!rec.press.length && top && top.dir === rec.dir) { top.n++; if (top.n < 100) histDirty = true; }
-    else if (rec.press.length || !top || top.dir !== rec.dir) {
-      if (top || rec.dir !== 5 || rec.press.length) { hist.unshift({ dir: rec.dir, press: rec.press.slice(), n: 1 }); if (hist.length > 16) hist.pop(); histDirty = true; }
-    }
-    resolvePending(rec);
-    if (rec.press.includes("2")) judgePress(buf.length - 1);
+    else if (top || rec.dir !== 5 || rec.press.length) { hist.unshift({ dir: rec.dir, press: rec.press.slice(), n: 1 }); if (hist.length > 16) hist.pop(); histDirty = true; }
   }
 
-  // ---------- judging ----------
-  const runStart = i => { const d = buf[i].dir; while (i > 0 && buf[i - 1].dir === d) i--; return i; };
-  const at = i => (i >= 0 && i < buf.length) ? buf[i] : null;
+  function record(m, kind, okKind, title, seq) {
+    const s = stats[m]; s.att++;
+    if (kind === okKind) { s.ok++; s.streak++; s.best = Math.max(s.best, s.streak); } else s.streak = 0;
+    s.recent.unshift({ k: kind, t: title, s: seq }); s.recent = s.recent.slice(0, 8);
+    save(); renderStats(); renderRecent();
+  }
+  function showVerdict(p, cls, title, detail, flash) {
+    const v = $(p + "-verdict"); v.textContent = title; v.className = "verdict " + cls;
+    $(p + "-detail").textContent = detail;
+    const j = $(p === "e" ? "judge-ewgf" : "judge-kien"); j.classList.remove("flash"); void j.offsetWidth; if (flash) j.classList.add("flash");
+  }
 
-  function judgePress(i) {
-    const rec = buf[i];
-    if (rec.f <= consumed) return;
-
-    if (rec.dir === 3) {
-      const s = runStart(i), late = i - s, j = s - 1;
-      const pj = at(j); if (!pj) return;
-      if (pj.dir === 2) {
-        const dS = runStart(j), pk = at(dS - 1); if (!pk) return;
-        if (pk.dir === 5) {
-          const nS = runStart(dS - 1), pm = at(nS - 1);
-          if (pm && pm.dir === 6) {
-            const fS = runStart(nS - 1);
-            if (buf[fS].f <= consumed) return;
-            return finish(late === 0 ? { kind: "electric" } : { kind: "wgf", late }, fS, i);
+  // =====================================================================
+  // 초풍신권 (EWGF)
+  // =====================================================================
+  const E = (() => {
+    let consumed = -1, pending = null;
+    function onFrame(rec) {
+      resolvePending(rec);
+      if (rec.press.includes("2")) judge(rec.f);
+    }
+    function judge(f) {
+      const rec = at(f); if (f <= consumed) return;
+      if (rec.dir === 3) {
+        const s = runStartF(f), late = f - s, j = s - 1, pj = at(j); if (!pj) return;
+        if (pj.dir === 2) {
+          const dS = runStartF(j), pk = at(dS - 1); if (!pk) return;
+          if (pk.dir === 5) {
+            const nS = runStartF(dS - 1), pm = at(nS - 1);
+            if (pm && pm.dir === 6) { const fS = runStartF(nS - 1); if (fS <= consumed) return; return finish(late === 0 ? { kind: "electric" } : { kind: "wgf", late }, fS, f); }
+            return finish({ kind: "noforward" }, Math.max(nS, f - 12), f);
           }
-          return finish({ kind: "noforward" }, Math.max(nS, i - 12), i);
+          if (pk.dir === 6) return finish({ kind: "noneutral" }, runStartF(dS - 1), f);
+          return;
         }
-        if (pk.dir === 6) return finish({ kind: "noneutral" }, runStart(dS - 1), i);
+        if (pj.dir === 6) return finish({ kind: "noneutral" }, runStartF(j), f);
+        if (pj.dir === 5) {
+          const nS = runStartF(j), pm = at(nS - 1);
+          if (pm && pm.dir === 6) {
+            const fS = runStartF(nS - 1); if (fS <= consumed) return;
+            if (!allowShort) return finish({ kind: "nodown" }, fS, f);
+            return finish(late === 0 ? { kind: "electric", short: true } : { kind: "wgf", late, short: true }, fS, f);
+          }
+        }
         return;
       }
-      if (pj.dir === 6) return finish({ kind: "noneutral" }, runStart(j), i);
-      if (pj.dir === 5) {
-        const nS = runStart(j), pm = at(nS - 1);
-        if (pm && pm.dir === 6) {
-          const fS = runStart(nS - 1);
-          if (buf[fS].f <= consumed) return;
-          if (!allowShort) return finish({ kind: "nodown" }, fS, i);
-          return finish(late === 0 ? { kind: "electric", short: true } : { kind: "wgf", late, short: true }, fS, i);
-        }
+      if (rec.dir === 2) {
+        const dS = runStartF(f), pk = at(dS - 1); if (!pk) return;
+        if (pk.dir === 5) { const nS = runStartF(dS - 1), pm = at(nS - 1); if (pm && pm.dir === 6) pending = { pressF: f, fS: runStartF(nS - 1), noN: false }; }
+        else if (pk.dir === 6) pending = { pressF: f, fS: runStartF(dS - 1), noN: true };
+        return;
       }
-      return;
-    }
-
-    if (rec.dir === 5 && allowShort) {
-      // 2 pressed on the neutral frame of the shortcut: only counts if ↘ follows right after
-      const nS = runStart(i), pm = at(nS - 1);
-      if (pm && pm.dir === 6) pending = { pressF: rec.f, fS: buf[runStart(nS - 1)].f, noN: false, soft: true };
-      return;
-    }
-
-    if (rec.dir === 2) {
-      const dS = runStart(i), pk = at(dS - 1); if (!pk) return;
-      if (pk.dir === 5) { const nS = runStart(dS - 1), pm = at(nS - 1); if (pm && pm.dir === 6) pending = { pressF: rec.f, fS: buf[runStart(nS - 1)].f, noN: false }; }
-      else if (pk.dir === 6) pending = { pressF: rec.f, fS: buf[runStart(dS - 1)].f, noN: true };
-    }
-  }
-
-  function resolvePending(rec) {
-    if (!pending) return;
-    const i = buf.length - 1, fSi = Math.max(0, i - (rec.f - pending.fS));
-    if (rec.dir === 3) { const early = rec.f - pending.pressF; const p = pending; pending = null; return finish(p.noN ? { kind: "noneutral" } : { kind: "early", early }, fSi, i, p.pressF); }
-    const stay = rec.dir === 2 || (pending.soft && rec.dir === 5);
-    if (!stay || rec.f - pending.pressF > 8) { const p = pending; pending = null; if (p.soft) return; return finish({ kind: p.noN ? "noneutral" : "nodf" }, fSi, i - 1, p.pressF); }
-  }
-
-  const TEXT = {
-    electric: r => ["초풍신권!", r.short ? "단축 커맨드(→N↘)로 ↘ 와 2가 같은 프레임에 들어갔습니다." : "정식 커맨드(→N↓↘)로 ↘ 와 2가 같은 프레임에 들어갔습니다."],
-    wgf:      r => ["풍신권", `2가 ${r.late}F 늦었습니다${r.short ? " (단축 커맨드)" : ""}. ↘ 가 들어가는 바로 그 순간에 2를 누르세요.`],
-    early:    r => [`2가 ${r.early}F 빠름`, "↘ 가 들어가기 전에 2가 먼저 들어갔습니다. ↘ 를 완성하는 순간과 맞추세요."],
-    noneutral:r => ["중립(N) 누락", "→ 를 놓지 않고 바로 ↓ 로 내려갔습니다. → 를 톡 치고 한 번 완전히 놓으세요."],
-    nodown:   r => ["↓ 누락", "단축 커맨드가 꺼져 있어 → N ↘ 는 실패로 칩니다. ↓ 를 먼저 누르고, 그 다음 → 를 더하세요."],
-    noforward:r => ["→ 누락", "시작할 때 → 입력이 없었습니다. → · N · ↓ · ↘ 순서입니다."],
-    nodf:     r => ["↘ 미완성", "↓ 다음에 ↘ 가 들어오지 않았습니다."]
-  };
-
-  function finish(r, startIdx, endIdx, pressF) {
-    consumed = buf[endIdx] ? buf[endIdx].f : buf[buf.length - 1].f;
-    pending = null;
-    let cells = buf.slice(Math.max(0, startIdx), endIdx + 1).map(c => ({ dir: c.dir, f: c.f, p2: c.press.includes("2") || c.f === pressF }));
-    let trimmed = 0;
-    while (cells.length > 1 && cells[0].dir === 6 && cells[4] && cells[4].dir === 6) { cells.shift(); trimmed++; }
-    if (cells.length > 40) { trimmed += cells.length - 40; cells = cells.slice(-40); }
-    const ok = r.kind === "electric";
-    const [title, detail] = TEXT[r.kind](r);
-    stats.att++;
-    if (ok) { stats.ew++; stats.streak++; stats.best = Math.max(stats.best, stats.streak); } else stats.streak = 0;
-    const seq = seqString(cells, trimmed);
-    stats.recent.unshift({ k: r.kind, t: title, s: seq });
-    stats.recent = stats.recent.slice(0, 8);
-    save();
-    renderResult(r.kind, title, detail, cells, trimmed, seq);
-    renderStats();
-    if (ok) zap(); else if (r.kind === "wgf") blip(330); else blip(150);
-  }
-
-  function seqString(cells, trimmed) {
-    const runs = [];
-    cells.forEach((c, idx) => {
-      const last = runs[runs.length - 1];
-      if (last && last.dir === c.dir && !c.p2) last.n++;
-      else runs.push({ dir: c.dir, n: 1 + (idx === 0 ? trimmed : 0), p2: c.p2 });
-      if (c.p2 && runs[runs.length - 1].dir === c.dir && runs[runs.length - 1].n > 1 && !runs[runs.length - 1].p2) {
-        runs[runs.length - 1].n--; runs.push({ dir: c.dir, n: 1, p2: true });
+      if (rec.dir === 5 && allowShort) {
+        const nS = runStartF(f), pm = at(nS - 1);
+        if (pm && pm.dir === 6) pending = { pressF: f, fS: runStartF(nS - 1), noN: false, soft: true };
       }
-    });
-    return runs.map(r => GLYPH[r.dir] + (r.p2 ? "+2" : "") + (r.n > 1 || !r.p2 ? r.n : "")).join(" ");
-  }
+    }
+    function resolvePending(rec) {
+      if (!pending) return;
+      if (rec.dir === 3) { const p = pending; pending = null; return finish(p.noN ? { kind: "noneutral" } : { kind: "early", early: rec.f - p.pressF }, p.fS, rec.f, p.pressF); }
+      const stay = rec.dir === 2 || (pending.soft && rec.dir === 5);
+      if (!stay || rec.f - pending.pressF > 8) { const p = pending; pending = null; if (p.soft) return; return finish({ kind: p.noN ? "noneutral" : "nodf" }, p.fS, rec.f - 1, p.pressF); }
+    }
+    const TEXT = {
+      electric: r => ["초풍신권!", r.short ? "단축 커맨드(→N↘)로 ↘ 와 RP가 같은 프레임에 들어갔습니다." : "정식 커맨드(→N↓↘)로 ↘ 와 RP가 같은 프레임에 들어갔습니다."],
+      wgf:      r => ["풍신권", `RP가 ${r.late}F 늦었습니다${r.short ? " (단축 커맨드)" : ""}. ↘ 가 들어가는 바로 그 순간에 RP를 누르세요.`],
+      early:    r => [`RP가 ${r.early}F 빠름`, "↘ 가 들어가기 전에 RP가 먼저 들어갔습니다. ↘ 를 완성하는 순간과 맞추세요."],
+      noneutral:r => ["중립(N) 누락", "→ 를 놓지 않고 바로 ↓ 로 내려갔습니다. → 를 톡 치고 한 번 완전히 놓으세요."],
+      nodown:   r => ["↓ 누락", "단축 커맨드가 꺼져 있어 → N ↘ 는 실패로 칩니다. ↓ 를 먼저 누르고, 그 다음 → 를 더하세요."],
+      noforward:r => ["→ 누락", "시작할 때 → 입력이 없었습니다. → · N · ↓ · ↘ 순서입니다."],
+      nodf:     r => ["↘ 미완성", "↓ 다음에 ↘ 가 들어오지 않았습니다."]
+    };
+    function finish(r, startF, endF, pressF) {
+      consumed = endF; pending = null;
+      let cells = [];
+      for (let f = startF; f <= endF; f++) { const c = at(f); if (c) cells.push({ dir: c.dir, p2: c.press.includes("2") || f === pressF }); }
+      let trimmed = 0;
+      while (cells.length > 1 && cells[0].dir === 6 && cells[4] && cells[4].dir === 6) { cells.shift(); trimmed++; }
+      if (cells.length > 40) { trimmed += cells.length - 40; cells = cells.slice(-40); }
+      const [title, detail] = TEXT[r.kind](r);
+      const seq = seqString(cells, trimmed);
+      showVerdict("e", r.kind === "electric" ? "electric" : r.kind === "wgf" ? "near" : "miss", title, detail, r.kind === "electric");
+      $("e-seq").textContent = seq;
+      const df = cells.findIndex(c => c.dir === 3);
+      let html = trimmed ? `<div class="cell trim"><div class="box">+${trimmed}</div><div class="fn">→</div></div>` : "";
+      cells.forEach((c, idx) => {
+        const cls = [5,6,2,3].includes(c.dir) ? "d" + c.dir : "dx", rel = df >= 0 ? idx - df : idx - cells.length + 1;
+        html += `<div class="cell"><div class="box ${cls}${c.p2 ? " p2" : ""}">${GLYPH[c.dir]}</div><div class="fn">${rel > 0 ? "+" + rel : rel}</div></div>`;
+      });
+      $("e-timeline").innerHTML = html;
+      record("ewgf", r.kind, "electric", title, seq);
+      if (r.kind === "electric") zap(); else blip(r.kind === "wgf" ? 330 : 150);
+    }
+    function seqString(cells, trimmed) {
+      const runs = [];
+      cells.forEach((c, idx) => {
+        const last = runs[runs.length - 1];
+        if (last && last.dir === c.dir && !c.p2) last.n++;
+        else runs.push({ dir: c.dir, n: 1 + (idx === 0 ? trimmed : 0), p2: c.p2 });
+      });
+      return runs.map(r => GLYPH[r.dir] + (r.p2 ? "+RP" : "") + (r.n > 1 || !r.p2 ? r.n : "")).join(" ");
+    }
+    return { onFrame, reset() { pending = null; consumed = lastFrame; } };
+  })();
 
-  // ---------- rendering ----------
-  function renderResult(kind, title, detail, cells, trimmed, seq) {
-    const v = $("verdict");
-    v.textContent = title;
-    v.className = "verdict " + (kind === "electric" ? "electric" : kind === "wgf" ? "wgf" : "miss");
-    $("detail").textContent = detail;
-    $("tlSeq").textContent = seq;
-    const df = cells.findIndex(c => c.dir === 3);
-    const tl = $("timeline"); tl.innerHTML = "";
-    if (trimmed) { const t = document.createElement("div"); t.className = "cell trim"; t.innerHTML = `<div class="box">+${trimmed}</div><div class="fn">→</div>`; tl.appendChild(t); }
-    cells.forEach((c, idx) => {
-      const el = document.createElement("div"); el.className = "cell";
-      const cls = [5,6,2,3].includes(c.dir) ? "d" + c.dir : "dx";
-      const rel = df >= 0 ? idx - df : idx - cells.length + 1;
-      el.innerHTML = `<div class="box ${cls}${c.p2 ? " p2" : ""}">${GLYPH[c.dir]}</div><div class="fn">${rel > 0 ? "+" + rel : rel}</div>`;
-      tl.appendChild(el);
-    });
-    const j = $("judge"); j.classList.remove("flash"); void j.offsetWidth; if (kind === "electric") j.classList.add("flash");
-    renderRecent();
-  }
+  // =====================================================================
+  // 기원초: 기원권 입력 프레임 = 1F, 1–46F 경직, 47–59F 초풍 구간
+  // =====================================================================
+  const K = (() => {
+    // 초풍 히트 구간 47–59F, 발동 11F → ↘+RP 입력은 47–49F
+    const CH = 14, REC_END = 46, WIN_END = 59, STARTUP = 11, INPUT_END = WIN_END - (STARTUP - 1), SHOW = 72, TIMEOUT = 80;
+    const INPUT_LEN = INPUT_END - REC_END;
+    let st = { phase: "idle", P: 0, cueAt: 0, endF: 0 };
+    const zrow = $("k-zrow"), irow = $("k-irow");
+    const zoneCls = F => F < CH ? "zs" : F === CH ? "zh" : F <= REC_END ? "zr" : F <= INPUT_END ? "zw" : F <= WIN_END ? "zt" : "zl";
+    zrow.innerHTML = irow.innerHTML = "";
+    for (let F = 1; F <= SHOW; F++) {
+      const z = document.createElement("div"); z.className = zoneCls(F); z.title = F + "F"; zrow.appendChild(z);
+      irow.appendChild(document.createElement("div"));
+    }
+    const zcells = zrow.children, icells = irow.children;
+    let drawn = 0, lastNow = -1;
 
+    function clearBar() {
+      for (let i = 0; i < SHOW; i++) { zcells[i].className = zoneCls(i + 1); icells[i].className = ""; icells[i].style.background = ""; }
+      drawn = 0; lastNow = -1;
+    }
+    function drawInputs(upToF) {
+      const lim = Math.min(upToF, SHOW);
+      for (let F = drawn + 1; F <= lim; F++) {
+        const rec = at(st.P + F - 1); if (!rec) continue;
+        const ic = icells[F - 1];
+        const col = { 6: "var(--sky)", 2: "var(--amber)", 3: "var(--volt)" }[rec.dir];
+        ic.className = rec.dir === 5 ? "" : col ? "" : "oth";
+        ic.style.background = col || "";
+        if (rec.press.includes("2")) ic.classList.add("p2"), F === 1 && ic.classList.add("ab");
+        zcells[F - 1].classList.add("past");
+      }
+      drawn = Math.max(drawn, lim);
+    }
+    function setClock(F) {
+      const fn = $("k-fnum"), z = $("k-zone");
+      if (F == null) { fn.textContent = "F –"; z.className = "zone"; z.textContent = autoOn ? "대기 · 자동 기원권 곧 나감" : "대기 · ↘+RP 로 기원권"; return; }
+      fn.textContent = "F" + F;
+      if (F <= REC_END) { z.className = "zone z-rec"; z.textContent = `경직 · ${REC_END - F + 1}F 남음`; }
+      else if (F <= INPUT_END) { z.className = "zone z-win"; z.textContent = `${F - REC_END}/${INPUT_LEN} ` + ["→", "N 또는 ↓", "↘+RP"][F - REC_END - 1]; }
+      else { z.className = "zone z-late"; z.textContent = "입력 구간 지남"; }
+    }
+    function renderLive() {
+      if (st.phase !== "active") return;
+      const F = lastFrame - st.P + 1;
+      drawInputs(F);
+      if (F !== lastNow) {
+        if (lastNow >= 1 && lastNow <= SHOW) zcells[lastNow - 1].classList.remove("now");
+        if (F >= 1 && F <= SHOW) zcells[F - 1].classList.add("now");
+        lastNow = F; setClock(F);
+      }
+    }
+    function start(f, auto) {
+      st = { phase: "active", P: f, cueAt: 0, endF: 0 };
+      clearBar();
+      showVerdict("k", "idle", "기원권 카운터", (auto ? "자동 기원권이 나갔습니다. " : "카운터 히트. ") + "46F까지 경직입니다. 47F →, 48F N, 49F ↘+RP.", false);
+      if (soundOn) tone("triangle", 220, 70, 0.12, 0.2);
+    }
+    function onFrame(rec) {
+      const f = rec.f, has2 = rec.press.includes("2");
+      if (st.phase === "idle") {
+        if (has2 && rec.dir === 3) return start(f, false);
+        if (autoOn && st.cueAt && f >= st.cueAt) return start(f, true);
+        return;
+      }
+      const F = f - st.P + 1;
+      if (F === CH && soundOn) tone("triangle", 160, 60, 0.1, 0.18);
+      if (has2) {
+        if (F <= REC_END) return finish(rec.dir === 3 ? { kind: "rebuffer", F } : { kind: "early2", F }, f);
+        return judge(f, F);
+      }
+      if (F >= TIMEOUT) return finish({ kind: "none", F }, f);
+    }
+    function judge(f, F) {
+      const rec = at(f);
+      if (rec.dir !== 3) return finish({ kind: "other", F }, f);
+      const s = runStartF(f), late = f - s, pj = at(s - 1);
+      let motion = null, midStart = 0, sixEnd = 0;
+      if (pj && pj.dir === 5) { const nS = runStartF(s - 1), p6 = at(nS - 1); if (p6 && p6.dir === 6) { motion = "6n3"; midStart = nS; sixEnd = nS - 1; } }
+      else if (pj && pj.dir === 2) {
+        const dS = runStartF(s - 1), pk = at(dS - 1);
+        if (pk && pk.dir === 6) { motion = "623"; midStart = dS; sixEnd = dS - 1; }
+        else if (pk && pk.dir === 5) { const nS = runStartF(dS - 1), p6 = at(nS - 1); if (p6 && p6.dir === 6) { motion = "6n23"; midStart = nS; sixEnd = nS - 1; } }
+      }
+      if (!motion) return finish({ kind: pj && pj.dir === 6 ? "nodown" : "nocmd", F }, f);
+      const rel = x => x - st.P + 1;
+      const r = { F, motion, F6: rel(sixEnd), Fm: rel(midStart), Fdf: rel(s), hit: F + STARTUP - 1 };
+      if (late > 0) return finish({ kind: "wgf", late, ...r }, f);
+      if (r.F6 <= REC_END) return finish({ kind: "early", ...r }, f);         // → 가 경직 중에 끝남
+      if (r.F6 === REC_END + 1 && F === INPUT_END) return finish({ kind: "kien", ...r }, f);
+      return finish({ kind: "air", ...r }, f);
+    }
+    const seqOf = r => `→ ${r.F6}F · ${r.motion === "623" ? "↓" : "N"} ${r.Fm}F${r.motion === "6n23" ? " · ↓" : ""} · ↘+RP ${r.F}F`;
+    const MNAME = { "6n3": "무족초 → N ↘", "623": "중립 생략 → ↓ ↘", "6n23": "정식 → N ↓ ↘" };
+    const TEXT = {
+      kien:     r => ["기원초!", `${seqOf(r)}. 세 프레임에 커맨드를 다 넣어 초풍이 ${r.hit}F에 맞았습니다.`],
+      air:      r => ["기원삑초", `${seqOf(r)}. ↘+RP 가 49F보다 ${r.F - INPUT_END}F 늦어 초풍이 ${r.hit}F에 맞았고 상대가 이미 떴습니다.${r.motion === "6n23" ? " 정식 커맨드는 4프레임이라 세 프레임에 들어가지 않습니다." : r.Fdf - r.F6 > 2 ? " → 와 ↘ 사이가 한 프레임보다 깁니다." : ""}`],
+      early:    r => ["기원권이 다시 나감", `${seqOf(r)}. → 가 ${r.F6}F에 끝나 커맨드가 경직 중에 시작됐습니다. → 는 47F에 있어야 합니다.`],
+      rebuffer: r => ["기원권이 다시 나감", `${r.F}F, 아직 경직 중에 ↘+RP 를 눌렀습니다. ${47 - r.F}F 더 기다리세요.`],
+      early2:   r => ["RP가 너무 빠름", `${r.F}F, 경직 중에 RP를 눌렀습니다. 47F부터 입력하세요.`],
+      wgf:      r => ["풍신권", `${r.F}F에 나갔지만 ↘ 보다 RP가 ${r.late}F 늦어 초풍이 아닌 풍신권입니다. ↘ 와 RP를 같은 프레임에.`],
+      nodown:   r => ["↓ 와 N 누락", `→ 에서 바로 ↘ 로 갔습니다. → N ↘ 또는 → ↓ ↘ 로 넣으세요.`],
+      nocmd:    r => ["커맨드 없음", `${r.F}F에 ↘+RP 가 들어갔지만 → 로 시작하지 않아 기원권이 나갑니다.`],
+      other:    r => ["다른 기술", `${r.F}F에 ↘ 가 아닌 방향에서 RP가 들어갔습니다.`],
+      none:     r => ["입력 없음", "초풍 구간이 지날 때까지 ↘+RP 가 들어오지 않았습니다."]
+    };
+    function finish(r, f) {
+      drawInputs(Math.min(r.F, SHOW));
+      if (lastNow >= 1 && lastNow <= SHOW) zcells[lastNow - 1].classList.remove("now");
+      if (r.F >= 1 && r.F <= SHOW) zcells[r.F - 1].classList.add("now");
+      setClock(r.F);
+      if (r.hit && r.hit <= SHOW && (r.kind === "kien" || r.kind === "air")) zcells[r.hit - 1].classList.add("hitmark");
+      const [title, detail] = TEXT[r.kind](r);
+      const ok = r.kind === "kien";
+      showVerdict("k", ok ? "electric" : (r.kind === "air" || r.kind === "wgf") ? "near" : "miss", title, detail, ok);
+      record("kien", r.kind, "kien", title, r.motion ? `${seqOf(r)} · 히트 ${r.hit}F` : `${r.F}F`);
+      st = { phase: "idle", P: st.P, cueAt: autoOn ? f + 60 + Math.floor(Math.random() * 60) : 0 };
+      if (ok) zap(); else blip(r.kind === "air" ? 330 : 150);
+    }
+    return {
+      onFrame, renderLive, setClock,
+      reset() { st = { phase: "idle", P: 0, cueAt: autoOn ? lastFrame + 90 : 0 }; },
+      cue(on) { if (st.phase === "idle") { st.cueAt = on ? lastFrame + 60 : 0; setClock(null); } }
+    };
+  })();
+
+  // ---------- rendering (shared) ----------
   function renderStats() {
-    $("sAtt").textContent = stats.att;
-    $("sEw").textContent = stats.ew;
-    $("sRate").textContent = stats.att ? Math.round(stats.ew / stats.att * 100) + "%" : "–";
-    $("sStreak").textContent = stats.streak;
-    $("sBest").textContent = `(최고 ${stats.best})`;
+    for (const [p, m] of [["e", "ewgf"], ["k", "kien"]]) {
+      const s = stats[m];
+      $(p + "-att").textContent = s.att; $(p + "-ok").textContent = s.ok;
+      $(p + "-rate").textContent = s.att ? Math.round(s.ok / s.att * 100) + "%" : "–";
+      $(p + "-streak").textContent = s.streak; $(p + "-best").textContent = `(최고 ${s.best})`;
+    }
   }
-
   function renderRecent() {
-    const ol = $("recent");
-    if (!stats.recent.length) { ol.innerHTML = '<li style="display:block;color:var(--dim)">기록이 없습니다.</li>'; return; }
-    ol.innerHTML = stats.recent.map(r => {
-      const c = r.k === "electric" ? "ok" : r.k === "wgf" ? "meh" : "no";
-      const m = r.k === "electric" ? "⚡" : r.k === "wgf" ? "△" : "✕";
+    const ol = $("recent"), list = stats[mode].recent, okK = mode === "ewgf" ? "electric" : "kien", nearK = mode === "ewgf" ? ["wgf"] : ["air", "wgf"];
+    if (!list.length) { ol.innerHTML = '<li style="display:block;color:var(--dim)">기록이 없습니다.</li>'; return; }
+    ol.innerHTML = list.map(r => {
+      const c = r.k === okK ? "ok" : nearK.includes(r.k) ? "meh" : "no", m = c === "ok" ? "⚡" : c === "meh" ? "△" : "✕";
       const t = r.k === "electric" ? "초풍신권!" : r.t;
       return `<li><span class="mk ${c}">${m}</span><span>${t}<span class="seq">${r.s}</span></span></li>`;
     }).join("");
   }
-
   function renderHistory() {
-    histDirty = false;
-    const ol = $("history");
-    if (!hist.length) return;
-    ol.innerHTML = hist.map(h => `<li><span class="dir">${GLYPH[h.dir]}</span><span class="bt">${h.press.join("+")}</span><span class="n">${h.n > 99 ? "99+" : h.n}</span></li>`).join("");
+    histDirty = false; if (!hist.length) return;
+    $("history").innerHTML = hist.map(h => `<li><span class="dir">${GLYPH[h.dir]}</span><span class="bt">${h.press.map(b => BTN[b]).join("+")}</span><span class="n">${h.n > 99 ? "99+" : h.n}</span></li>`).join("");
   }
-
   const padEl = $("pad");
   [7,8,9,4,5,6,1,2,3].forEach(d => { const c = document.createElement("div"); c.dataset.d = d; c.textContent = GLYPH[d]; padEl.appendChild(c); });
   let liveKey = "";
   function renderLive() {
-    const d = dirNow(); const key = d + ":" + btnHeld[1] + btnHeld[2] + btnHeld[3] + btnHeld[4];
+    const d = dirNow(), key = d + ":" + btnHeld[1] + btnHeld[2] + btnHeld[3] + btnHeld[4];
     if (key === liveKey) return; liveKey = key;
     padEl.querySelectorAll("div").forEach(c => c.classList.toggle("on", +c.dataset.d === d));
     $("btns").querySelectorAll("div").forEach(c => c.classList.toggle("on", !!btnHeld[c.dataset.b]));
@@ -476,45 +678,49 @@ button.danger[data-armed="true"] { background: var(--bad); color: var(--bg); bor
   // ---------- sound ----------
   let ac = null;
   function audioInit() { if (ac || !soundOn) return; try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = null; } }
+  function tone(type, f1, f2, dur, vol) {
+    if (!soundOn || !ac) return;
+    try { const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.setValueAtTime(f1, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur); o.connect(g).connect(ac.destination); o.start(t); o.stop(t + dur + 0.01); } catch (e) {}
+  }
   function zap() {
+    tone("sawtooth", 1400, 90, 0.22, 0.18);
     if (!soundOn || !ac) return;
-    try {
-      const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
-      o.type = "sawtooth"; o.frequency.setValueAtTime(1400, t); o.frequency.exponentialRampToValueAtTime(90, t + 0.22);
-      g.gain.setValueAtTime(0.18, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
-      o.connect(g).connect(ac.destination); o.start(t); o.stop(t + 0.26);
-      const n = ac.createBufferSource(), b = ac.createBuffer(1, ac.sampleRate * 0.12, ac.sampleRate), d = b.getChannelData(0);
+    try { const t = ac.currentTime, n = ac.createBufferSource(), b = ac.createBuffer(1, ac.sampleRate * 0.12, ac.sampleRate), d = b.getChannelData(0);
       for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
-      const ng = ac.createGain(); ng.gain.value = 0.12; n.buffer = b; n.connect(ng).connect(ac.destination); n.start(t);
-    } catch (e) {}
+      const g = ac.createGain(); g.gain.value = 0.12; n.buffer = b; n.connect(g).connect(ac.destination); n.start(t); } catch (e) {}
   }
-  function blip(freq) {
-    if (!soundOn || !ac) return;
-    try { const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain(); o.type = "square"; o.frequency.value = freq; g.gain.setValueAtTime(0.06, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.12); o.connect(g).connect(ac.destination); o.start(t); o.stop(t + 0.13); } catch (e) {}
-  }
+  const blip = fq => tone("square", fq, 0, 0.12, 0.06);
 
-  // ---------- controls ----------
+  // ---------- tabs & controls ----------
+  function setMode(m) {
+    mode = m;
+    document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.mode === m));
+    document.querySelectorAll("[data-for]").forEach(el => el.hidden = el.dataset.for !== m);
+    E.reset(); K.reset(); K.setClock(null);
+    try { history.replaceState(null, "", "#" + m); } catch (e) {}
+    renderRecent(); save();
+  }
+  document.querySelectorAll(".tab").forEach(t => t.onclick = () => setMode(t.dataset.mode));
   function setSide(s) { side = s; $("side1").setAttribute("aria-pressed", s === 1); $("side2").setAttribute("aria-pressed", s === -1); save(); liveKey = ""; }
-  $("side1").onclick = () => setSide(1);
-  $("side2").onclick = () => setSide(-1);
-  const shortBtn = $("shortcut");
-  const syncShort = () => { shortBtn.textContent = allowShort ? "단축 커맨드 허용" : "단축 커맨드 끔"; shortBtn.setAttribute("aria-pressed", allowShort); };
-  shortBtn.onclick = () => { allowShort = !allowShort; syncShort(); save(); };
-  syncShort();
-  const soundBtn = $("sound");
-  const syncSound = () => { soundBtn.textContent = soundOn ? "효과음 켜짐" : "효과음 꺼짐"; soundBtn.setAttribute("aria-pressed", soundOn); };
-  soundBtn.onclick = () => { soundOn = !soundOn; syncSound(); save(); audioInit(); };
-  const resetBtn = $("reset"); let armT = 0;
-  resetBtn.onclick = () => {
-    if (resetBtn.dataset.armed !== "true") { resetBtn.dataset.armed = "true"; resetBtn.textContent = "한 번 더 누르면 초기화"; clearTimeout(armT); armT = setTimeout(() => { resetBtn.dataset.armed = "false"; resetBtn.textContent = "기록 초기화"; }, 2500); return; }
-    stats = { att:0, ew:0, streak:0, best:0, recent:[] }; save(); renderStats(); renderRecent();
-    resetBtn.dataset.armed = "false"; resetBtn.textContent = "기록 초기화";
+  $("side1").onclick = () => setSide(1); $("side2").onclick = () => setSide(-1);
+  const toggle = (id, get, set, on, off, after) => {
+    const b = $(id), sync = () => { b.textContent = get() ? on : off; b.setAttribute("aria-pressed", get()); };
+    b.onclick = () => { set(!get()); sync(); save(); audioInit(); after && after(); }; sync();
   };
+  toggle("sound", () => soundOn, v => soundOn = v, "효과음 켜짐", "효과음 꺼짐");
+  toggle("shortcut", () => allowShort, v => allowShort = v, "단축 커맨드 허용", "단축 커맨드 끔");
+  toggle("auto", () => autoOn, v => autoOn = v, "자동 기원권 켜짐", "자동 기원권 끔", () => K.cue(autoOn));
+  for (const [id, m, label] of [["e-reset", "ewgf", "초풍 기록 초기화"], ["k-reset", "kien", "기원초 기록 초기화"]]) {
+    const b = $(id); let armT = 0;
+    b.onclick = () => {
+      if (b.dataset.armed !== "true") { b.dataset.armed = "true"; b.textContent = "한 번 더 누르면 초기화"; clearTimeout(armT); armT = setTimeout(() => { b.dataset.armed = "false"; b.textContent = label; }, 2500); return; }
+      stats[m] = blank(); save(); renderStats(); renderRecent(); b.dataset.armed = "false"; b.textContent = label;
+    };
+  }
   $("focusHint").onclick = () => window.focus();
-  // Buttons keep focus after a click; send it back so Space/arrows don't press them.
   document.querySelectorAll("button").forEach(b => b.addEventListener("mouseup", () => b.blur()));
 
-  setSide(side); syncSound(); renderStats(); renderRecent();
+  setSide(side); setMode(mode); renderStats();
   requestAnimationFrame(tick);
 })();
 </script>
